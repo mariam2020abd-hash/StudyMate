@@ -1,0 +1,25 @@
+{
+  "name": "studymate-website",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@types/react-dom": "~19.1.0",
+    "vite": "^8.0.0",
+    "@types/react": "~19.1.0",
+    "typescript": "~5.9.2"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

@@ -1,5 +1,13 @@
 # StudyMate — الموقع
 
+## النشر على GitHub Pages
+
+ينشر الملف `.github/workflows/deploy-website.yml` الموقع عند رفع تغييرات `website` إلى `main`، ويمكن تشغيله يدويًا من Actions. يجب اختيار **GitHub Actions** من إعدادات المستودع **Settings → Pages → Source**.
+
+رابط النشر: https://mariam2020abd-hash.github.io/StudyMate/
+
+يضبط `vite.config.ts` مسار ملفات البناء إلى `/StudyMate/`، بينما يبقى التشغيل المحلي على `/`. عند تغيير اسم المستودع أو استخدام نطاق مخصص يجب تحديث هذا المسار.
+
 مشروع React + React DOM + Vite مستقل. لا يعتمد على أي ملفات من تطبيق الجوال.
 
 من هذا المجلد، باستخدام Node.js 22.13 أو أحدث:

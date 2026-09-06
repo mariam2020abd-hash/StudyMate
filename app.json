@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "StudyMate",
+    "slug": "studymate",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

@@ -11,9 +11,8 @@ export default function LandingPage({ onOpenDashboard }: { onOpenDashboard: () =
       <div>
         <span className="eyebrow">● رفيقك الدراسي الهادئ</span>
         <h1>افهم أكثر،<br />وتقدّم بثقة.</h1>
-        <p className="intro">منصة تساعد الطالب الجامعي على فهم الشابترات الإنجليزية، تنظيم تقدمه الدراسي، وحساب معدله في مكان واحد.</p>
+        <p className="intro">منصة تساعد الطالب الجامعي على فهم الشباتر، تنظيم تقدمه الدراسي، وحساب معدله في مكان واحد.</p>
         <div className="actions"><button onClick={onOpenDashboard}>افتح لوحة الطالب ←</button><a href="#journey">كيف يعمل؟</a></div>
-        <p className="muted">✓ تصميم عربي بسيط، على الويب والجوال</p>
       </div>
       <aside className="card preview" aria-label="مثال توضيحي للوحة الطالب">
         <div className="section-head"><span>لوحة الطالب · مثال توضيحي</span><span className="purple">● ● ●</span></div>

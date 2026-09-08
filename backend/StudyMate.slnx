@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="StudyMate.Api.Tests/StudyMate.Api.Tests.csproj" />
+  <Project Path="StudyMate.Api/StudyMate.Api.csproj" />
+</Solution>

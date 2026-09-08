@@ -1,9 +1,19 @@
-import { useState } from 'react';
-import { initialCourses } from '../data/demoCourses';
+import { useEffect, useState } from 'react';
+import { loadCourses, saveCourses } from '../data/courseStorage';
+import type { Course } from '../types/course';
 
-// Each screen owns a temporary session; no browser or native storage dependency.
 export function useDashboard() {
-  const [courses, setCourses] = useState(initialCourses);
+  const [initial] = useState(() => {
+    try { return { courses: loadCourses(window.localStorage), error: '' }; }
+    catch { return { courses: [] as Course[], error: 'تعذّر قراءة البيانات المحفوظة. لن نستبدلها. تحقّق من إعدادات المتصفح ثم أعد تحميل الصفحة.' }; }
+  });
+  const [courses, setCourses] = useState(initial.courses);
+  const [storageError, setStorageError] = useState(initial.error);
+  useEffect(() => {
+    if (initial.error) return;
+    try { saveCourses(window.localStorage, courses); setStorageError(''); }
+    catch { setStorageError('تعذّر حفظ التغييرات. قد تكون مساحة المتصفح ممتلئة أو التخزين محظورًا؛ اترك الصفحة مفتوحة حتى تتمكن من الحفظ.'); }
+  }, [courses, initial.error]);
   const [selected, setSelected] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
@@ -20,10 +30,10 @@ export function useDashboard() {
     const trimmed = name.trim();
     if (!trimmed) return setError('اكتب اسم المقرر أولًا.');
     if (courses.some(item => item.name === trimmed)) return setError('هذا المقرر موجود بالفعل.');
-    const id = Date.now();
+    const id = Math.max(Date.now(), ...courses.map(item => item.id + 1));
     setCourses(items => [...items, { id, name: trimmed, chapters: [] }]);
     setName(''); setError(''); setAdding(false); setSelected(id);
   }
 
-  return { courses, setCourses, selected, setSelected, adding, setAdding, name, setName, chapterName, setChapterName, error, setError, completed, progress, course, nextCourse, nextChapter, addCourse };
+  return { courses, setCourses, selected, setSelected, adding, setAdding, name, setName, chapterName, setChapterName, error, setError, storageError, completed, progress, course, nextCourse, nextChapter, addCourse };
 }

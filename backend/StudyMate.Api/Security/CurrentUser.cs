@@ -35,6 +35,12 @@ public sealed class SessionMiddleware(RequestDelegate next)
     public async Task InvokeAsync(HttpContext context, AppDb db, CurrentUser actor, TimeProvider clock)
     {
         var header = context.Request.Headers.Authorization.ToString();
+        if (context.User.Identity?.IsAuthenticated == true)
+        {
+            var uid = context.User.FindFirst("sub")?.Value;
+            var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.FirebaseUid == uid && u.Active && u.Verified && u.DeletedAt == null, context.RequestAborted);
+            if (user != null) { actor.Id = user.Id; actor.Role = user.Role; }
+        }
         if (header.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) && header.Length <= 100)
         {
             var hash = Secrets.Hash(header[7..]);

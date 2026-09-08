@@ -1,3 +1,4 @@
+import { auth, authReady } from '../services/auth';
 const base = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
 let token = sessionStorage.getItem('studymate.session');
 
@@ -11,12 +12,14 @@ export function setSession(value: string | null) {
   else sessionStorage.removeItem('studymate.session');
 }
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+  await authReady;
+  const bearer = auth.currentUser ? await auth.currentUser.getIdToken() : token;
   let response: Response;
   try {
     response = await fetch(`${base}/api${path}`, {
       ...options,
       headers: { ...(options.body && !(options.body instanceof FormData) && !(options.body instanceof Blob) ? { 'Content-Type': 'application/json' } : {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers },
+        ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}), ...options.headers },
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') throw error;

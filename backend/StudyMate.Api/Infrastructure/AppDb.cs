@@ -28,6 +28,8 @@ public sealed class AppDb(DbContextOptions<AppDb> options, CurrentUser actor) : 
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<User>().HasIndex(x => x.Email).IsUnique();
+        b.Entity<User>().Property(x => x.FirebaseUid).HasMaxLength(128).UseCollation("Latin1_General_100_BIN2");
+        b.Entity<User>().HasIndex(x => x.FirebaseUid).IsUnique().HasFilter("[FirebaseUid] IS NOT NULL");
         b.Entity<User>().Property(x => x.Email).HasMaxLength(254);
         b.Entity<User>().Property(x => x.PasswordHash).HasMaxLength(512);
         b.Entity<User>().Property(x => x.Role).HasMaxLength(20);

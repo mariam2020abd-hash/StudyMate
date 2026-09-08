@@ -14,6 +14,7 @@ public abstract class OwnedEntity : Entity
 
 public sealed class User : Entity
 {
+    public string? FirebaseUid { get; set; }
     public string Email { get; set; } = "";
     public string PasswordHash { get; set; } = "";
     public string Role { get; set; } = "student";

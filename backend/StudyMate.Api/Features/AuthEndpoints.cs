@@ -29,6 +29,32 @@ public static class AuthEndpoints
     public static void MapAuth(this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/auth").RequireRateLimiting("auth");
+        group.MapPost("/firebase", async (HttpContext context, AppDb db, IPasswordHasher<User> hasher) =>
+        {
+            if (context.User.Identity?.IsAuthenticated != true) throw new ApiException(401, "unauthorized", "سجّل الدخول وأكّد بريدك الإلكتروني أولًا.");
+            var uid = context.User.FindFirst("sub")!.Value;
+            var email = Email(context.User.FindFirst("email")?.Value ?? "");
+            var user = await db.Users.SingleOrDefaultAsync(u => u.FirebaseUid == uid);
+            if (user == null)
+            {
+                user = await db.Users.SingleOrDefaultAsync(u => u.Email == email);
+                // Link only a previously verified student identity; preserve its ID and study data.
+                if (user != null && (user.FirebaseUid != null || !user.Verified || user.Role != "student" || !user.Active || user.DeletedAt != null))
+                    throw new ApiException(409, "account_link_required", "هذا البريد مرتبط بحساب سابق يحتاج مراجعة قبل الربط. لم تتغير بياناته.");
+                if (user == null)
+                {
+                    user = new User { Email = email, Verified = true };
+                    user.PasswordHash = hasher.HashPassword(user, Secrets.NewToken());
+                    db.Users.Add(user);
+                }
+                user.FirebaseUid = uid;
+                db.Sessions.RemoveRange(await db.Sessions.Where(s => s.UserId == user.Id).ToListAsync());
+                db.AccountTokens.RemoveRange(await db.AccountTokens.Where(t => t.UserId == user.Id).ToListAsync());
+                await db.SaveChangesAsync();
+            }
+            if (!user.Active || user.DeletedAt != null || !user.Verified) throw new ApiException(403, "forbidden", "هذا الحساب غير متاح.");
+            return Results.Ok(Profile(user));
+        });
         group.MapPost("/register", async (Credentials request, AppDb db, IPasswordHasher<User> hasher, IDataProtectionProvider protection, IConfiguration config, TimeProvider clock) =>
         {
             var email = Email(request.Email); Password(request.Password);
@@ -70,7 +96,7 @@ public static class AuthEndpoints
                 hasher.HashPassword(new User(), request.Password);
                 throw failure;
             }
-            if (user.LockedUntil > now) throw failure;
+            if (user.LockedUntil > now || user.FirebaseUid != null) throw failure;
             var valid = hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
             if (valid == PasswordVerificationResult.Failed || !user.Verified || !user.Active || user.DeletedAt != null)
             {

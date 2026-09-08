@@ -10,6 +10,7 @@ using StudyMate.Api.Security;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<CurrentUser>();
+builder.Services.AddFirebaseAuthentication(builder.Configuration);
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.Configure<PasswordHasherOptions>(o => o.IterationCount = 210_000);
 builder.Services.AddDbContext<AppDb>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("StudyMate") ?? throw new InvalidOperationException("Configure ConnectionStrings:StudyMate.")));
@@ -45,7 +46,7 @@ if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing"
     app.UseHsts();
     app.Use(async (ctx, next) => { if (!ctx.Request.IsHttps) throw new ApiException(400, "https_required", "يلزم اتصال HTTPS."); await next(ctx); });
 }
-app.UseCors(); app.UseRateLimiter(); app.UseMiddleware<SessionMiddleware>();
+app.UseCors(); app.UseRateLimiter(); app.UseAuthentication(); app.UseMiddleware<SessionMiddleware>();
 app.Use(async (ctx, next) => { if (ctx.Request.Path.StartsWithSegments("/api")) ctx.Response.Headers.CacheControl = "no-store"; await next(ctx); });
 app.MapGet("/health", async (AppDb db) => await db.Database.CanConnectAsync() ? Results.Ok(new { status = "ready" }) : Results.StatusCode(503));
 app.MapAuth(); app.MapStudy(); app.MapGpa(); app.MapAdmin(); app.MapPdf(); app.MapGeneration(); app.MapQuiz();

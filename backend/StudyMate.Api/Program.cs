@@ -29,7 +29,8 @@ builder.Services.AddRateLimiter(options =>
 });
 if (builder.Configuration.GetValue("Mail:WorkerEnabled", true)) builder.Services.AddHostedService<MailWorker>();
 builder.Services.AddSingleton<PdfProcessor>();
-builder.Services.AddHttpClient<IStudyGenerator, OpenAiStudyGenerator>(client => client.Timeout = TimeSpan.FromSeconds(180));
+builder.Services.AddSingleton<IFirebaseServerCredential, FirebaseServerCredential>();
+builder.Services.AddHttpClient<IStudyGenerator, FirebaseAiStudyGenerator>(client => client.Timeout = TimeSpan.FromSeconds(180));
 builder.Services.AddSingleton<GenerationProcessor>();
 if (builder.Configuration.GetValue("Generation:WorkerEnabled", true)) builder.Services.AddHostedService<GenerationWorker>();
 if (builder.Configuration.GetValue("Pdf:WorkerEnabled", true)) builder.Services.AddHostedService<PdfWorker>();

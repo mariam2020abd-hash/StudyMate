@@ -7,7 +7,8 @@ namespace StudyMate.Api.Infrastructure;
 public sealed record Citation(int Page, string Quote);
 public sealed record StudySection(string Title, string Body, Citation[] Citations);
 public sealed record StudyQuestion(string Kind, string Prompt, string[] Choices, int CorrectIndex, string Explanation, Citation[] Citations);
-public sealed record GenerationDocument(bool InsufficientContent, string Language, StudySection[] Sections, StudyQuestion[] Questions);
+public sealed record GenerationDocument(bool InsufficientContent, string Language, StudySection[] Sections, StudyQuestion[] Questions,
+    string? Provider = null, string? Model = null, string? Template = null);
 public sealed record GenerationInput(string Kind, string Language, int QuestionCount, SourcePage[] Pages);
 
 public interface IStudyGenerator

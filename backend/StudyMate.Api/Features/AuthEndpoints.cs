@@ -38,8 +38,9 @@ public static class AuthEndpoints
             if (user == null)
             {
                 user = await db.Users.SingleOrDefaultAsync(u => u.Email == email);
-                // Link only a previously verified student identity; preserve its ID and study data.
-                if (user != null && (user.FirebaseUid != null || !user.Verified || user.Role != "student" || !user.Active || user.DeletedAt != null))
+                // The validated Firebase token proves email ownership, including for a pending legacy registration.
+                // Preserve student data, but never relink another UID or reactivate disabled accounts.
+                if (user != null && (user.FirebaseUid != null || user.Role != "student" || !user.Active || user.DeletedAt != null))
                     throw new ApiException(409, "account_link_required", "هذا البريد مرتبط بحساب سابق يحتاج مراجعة قبل الربط. لم تتغير بياناته.");
                 if (user == null)
                 {
@@ -48,6 +49,7 @@ public static class AuthEndpoints
                     db.Users.Add(user);
                 }
                 user.FirebaseUid = uid;
+                user.Verified = true;
                 db.Sessions.RemoveRange(await db.Sessions.Where(s => s.UserId == user.Id).ToListAsync());
                 db.AccountTokens.RemoveRange(await db.AccountTokens.Where(t => t.UserId == user.Id).ToListAsync());
                 await db.SaveChangesAsync();

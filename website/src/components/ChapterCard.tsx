@@ -12,7 +12,8 @@ const panels: { id: Panel; title: string; description: string; icon: string }[] 
   { id: 'quiz', title: 'الاختبار', description: 'تدرّب وراجع إجاباتك', icon: '03' },
 ];
 
-export default function ChapterCard({ chapter: ch, busy, action, onChanged }: {
+export default function ChapterCard({ chapter: ch, busy, action, onChanged, expanded, onToggle }: {
+  expanded: boolean; onToggle: () => void;
   chapter: Chapter; busy: boolean; action: (work: () => Promise<unknown>) => Promise<boolean>; onChanged: () => Promise<void>;
 }) {
   const [active, setActive] = useState<Panel>('file');
@@ -20,9 +21,9 @@ export default function ChapterCard({ chapter: ch, busy, action, onChanged }: {
   function select(panel: Panel) {
     setActive(panel); setVisited(previous => previous.includes(panel) ? previous : [...previous, panel]);
   }
-  return <article className="chapter-card" aria-labelledby={`chapter-title-${ch.id}`}>
+  return <article id={`chapter-card-${ch.id}`} className="chapter-card" style={{ scrollMarginTop: 24 }} aria-labelledby={`chapter-title-${ch.id}`}>
     <header className="chapter-card-header">
-      <div className="chapter-heading"><span className="kicker">الشابتر</span><h3 id={`chapter-title-${ch.id}`} dir="auto">{ch.title}</h3>
+      <div className="chapter-heading"><span className="kicker">الشابتر</span><h3 id={`chapter-title-${ch.id}`}><button className="chapter-toggle" aria-expanded={expanded} aria-controls={`chapter-body-${ch.id}`} title={expanded ? 'طي تفاصيل الشابتر' : 'فتح تفاصيل الشابتر'} onClick={onToggle}><bdi>{ch.title}</bdi><span className="chapter-toggle-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg></span></button></h3>
         <label className="chapter-review"><input type="checkbox" disabled={busy} checked={ch.reviewed}
           onChange={() => action(() => put(`/study/chapters/${ch.id}`, { title: ch.title, reviewed: !ch.reviewed, version: ch.version }))} />تمت المراجعة</label>
       </div>
@@ -34,6 +35,7 @@ export default function ChapterCard({ chapter: ch, busy, action, onChanged }: {
         </div>
       </details>
     </header>
+    <div id={`chapter-body-${ch.id}`} hidden={!expanded}>
     <div className="chapter-tools" role="group" aria-label={`محتوى ${ch.title}`}>
       {panels.map(panel => <button key={panel.id} className={`chapter-tool ${active === panel.id ? 'selected' : ''}`} aria-pressed={active === panel.id}
         aria-controls={`chapter-panel-${ch.id}-${panel.id}`} onClick={() => select(panel.id)}>
@@ -45,5 +47,6 @@ export default function ChapterCard({ chapter: ch, busy, action, onChanged }: {
         ? <ChapterFile chapterId={ch.id} version={ch.version} onChanged={onChanged} />
         : <StudyContent chapterId={ch.id} ready={ch.status === 'ready'} contentKind={panel.id} />)}
     </div>)}
+    </div>
   </article>;
 }

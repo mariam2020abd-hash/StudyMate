@@ -57,6 +57,19 @@ footer { color: var(--muted); padding: 32px 0; font-size: 13px; }
 .focus p, .focus small { color: #d9d0e1; }
 .course { text-align: start; color: #141017; font-weight: 400; }
 .course p { font-size: 13px; }
+.chapter-toggle { display: inline-flex; align-items: center; gap: 12px; max-width: 100%; padding: 4px 0; background: transparent; color: inherit; text-align: start; border-radius: 10px; }
+.chapter-toggle bdi { min-width: 0; overflow-wrap: anywhere; }
+.chapter-toggle-icon { display: grid; place-items: center; flex: 0 0 36px; height: 36px; border: 1px solid #e4d9f5; border-radius: 10px; background: #f7f2ff; color: var(--purple); transition: background .18s, border-color .18s; }
+.chapter-toggle-icon svg { transition: transform .18s ease; }
+.chapter-toggle[aria-expanded="true"] .chapter-toggle-icon svg { transform: rotate(180deg); }
+.chapter-toggle:hover { filter: none; }
+.chapter-toggle:hover .chapter-toggle-icon { background: #eee5fc; border-color: #b99be9; }
+.chapter-toggle:focus-visible { outline: 2px solid var(--purple); outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { .chapter-toggle-icon, .chapter-toggle-icon svg { transition: none; } }
+.course-with-options { display: flex; align-items: flex-start; gap: 12px; }
+.course-select { flex: 1; min-width: 0; padding: 0; background: transparent; color: inherit; text-align: start; font-weight: 400; }
+.course-select h2 { margin-top: 0; }
+.course-select:focus-visible { outline: 2px solid var(--purple); outline-offset: 5px; }
 .course-icon { color: var(--purple); font-size: 28px; }
 .course.active { border-color: #a78bdf; background: #eee5fc; box-shadow: inset 0 -3px 0 #a78bdf; }
 .form { display: grid; gap: 12px; margin: 20px 0; }
@@ -116,6 +129,8 @@ input, select { min-width: 0; }
 .chapter-options summary { cursor: pointer; list-style: none; border: 1px solid #e5deed; border-radius: 9px; padding: 6px 12px; color: var(--muted); font-size: 13px; }
 .chapter-options summary::-webkit-details-marker { display: none; }
 .chapter-options summary span { font-size: 20px; margin-inline-start: 6px; }
+.course-with-options .chapter-options summary { min-width: 40px; min-height: 40px; padding: 4px 8px; display: grid; place-items: center; }
+.course-with-options .chapter-options summary span { margin-inline-start: 0; }
 .chapter-options-content { position: absolute; inset-inline-end: 0; top: calc(100% + 8px); z-index: 5; display: grid; gap: 10px; padding: 14px; width: min(310px, 65vw); border: 1px solid #e5deed; border-radius: 12px; background: white; box-shadow: 0 8px 24px #21152f14; }
 .chapter-options-content .form { margin: 0; }
 .chapter-tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; padding: 0 22px 22px; }

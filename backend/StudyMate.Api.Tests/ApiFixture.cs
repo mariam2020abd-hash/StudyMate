@@ -23,7 +23,14 @@ public sealed class ApiFixture : WebApplicationFactory<Program>, IAsyncLifetime
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
-        builder.ConfigureServices(services => services.AddSingleton<IStudyGenerator>(Generator));
+        builder.ConfigureServices(services =>
+        {
+            services.AddSingleton<IStudyGenerator>(Generator);
+            // Tests drive processors explicitly. Background workers must not race schema creation or assertions.
+            foreach (var descriptor in services.Where(d => d.ImplementationType == typeof(GenerationWorker)
+                || d.ImplementationType == typeof(PdfWorker) || d.ImplementationType == typeof(MailWorker)).ToArray())
+                services.Remove(descriptor);
+        });
         builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:StudyMate"] = new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable("STUDYMATE_TEST_SQL") ?? "Server=(localdb)\\MSSQLLocalDB;Integrated Security=true;TrustServerCertificate=true") { InitialCatalog = database }.ConnectionString,

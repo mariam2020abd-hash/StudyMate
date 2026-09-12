@@ -9,6 +9,19 @@ export default function StudyWorkspace({ user, onLogout }: { user: User; onLogou
   const [data, setData] = useState<Dashboard>(); const [terms, setTerms] = useState<Term[]>([]);
   const [tab, setTab] = useState<'courses' | 'goals' | 'gpa'>('courses');
   const [selected, setSelected] = useState<string>();
+  const [expandedChapter, setExpandedChapter] = useState<string | null>();
+  const [reviewTarget, setReviewTarget] = useState<string | null>(null);
+  useEffect(() => {
+    if (!reviewTarget) return;
+    const target = document.getElementById(`chapter-card-${reviewTarget}`);
+    if (target) {
+      target.querySelector<HTMLButtonElement>('.chapter-toggle')?.focus({ preventScroll: true });
+      target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+      setReviewTarget(null);
+    }
+  }, [reviewTarget]);
+  const [addingChapter, setAddingChapter] = useState(false);
+  useEffect(() => { setAddingChapter(false); setChapterName(''); }, [selected]);
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false);
   const [query, setQuery] = useState(''); const [filter, setFilter] = useState<'all' | 'pending' | 'done'>('all');
   const [courseName, setCourseName] = useState(''); const [chapterName, setChapterName] = useState('');
@@ -42,20 +55,33 @@ export default function StudyWorkspace({ user, onLogout }: { user: User; onLogou
     {!data && !error && <p role="status">جارٍ تحميل حسابك…</p>}
     {data && <>
       <section className="stats" aria-label="تقدم الدراسة"><div className="card"><strong>{data.courses.length}</strong><span>المقررات</span></div><div className="card"><strong>{data.completed}</strong><span>شابترات تمت مراجعتها</span></div><div className="card"><strong>{data.progress}%</strong><span>التقدم العام</span></div></section>
-      {nextCourse && nextChapter && <section className="focus"><div><small>خطوتك التالية</small><h2>{nextChapter.title}</h2><p>{nextCourse.name}</p></div><button onClick={() => { setTab('courses'); setSelected(nextCourse.id); setQuery(''); setFilter('pending'); }}>فتح المراجعة</button></section>}
+      {nextCourse && nextChapter && <section className="focus"><div><small>خطوتك التالية</small><h2>{nextChapter.title}</h2><p>{nextCourse.name}</p></div><button onClick={() => { setTab('courses'); setSelected(nextCourse.id); setQuery(''); setFilter('pending'); setExpandedChapter(nextChapter.id); setReviewTarget(nextChapter.id); }}>فتح المراجعة</button></section>}
       {tab === 'courses' && <>
         <form className="card form" onSubmit={async e => { e.preventDefault(); if (await action(() => post('/study/courses', { name: courseName }))) setCourseName(''); }}><label>أضف مقرر<input required maxLength={80} value={courseName} onChange={e => setCourseName(e.target.value)} /></label><button disabled={busy || !courseName.trim()}>إضافة المقرر</button></form>
         {data.courses.length > 0 && <><div className="search-panel"><label htmlFor="course-search">البحث بالمقرر أو الشابتر</label><input id="course-search" type="search" value={query} onChange={e => setQuery(e.target.value)} /></div>
         <p role="status">عرض {visible.length} من {data.courses.length} مقررات</p></>}
-        <section className="grid">{visible.map(c => <button className={`card course ${selected === c.id ? 'active' : ''}`} key={c.id} aria-pressed={selected === c.id} onClick={() => { setSelected(c.id); setFilter('all'); }}><h2>{c.name}</h2><p>{c.chapters.filter(ch => ch.reviewed).length} من {c.chapters.length} تمت مراجعتها</p></button>)}</section>
+        <section className="grid">{visible.map(c => <article className={`card course course-with-options ${selected === c.id ? 'active' : ''}`} key={c.id}>
+          <button className="course-select" aria-pressed={selected === c.id} onClick={() => { setSelected(c.id); setFilter('all'); }}><h2>{c.name}</h2><p>{c.chapters.filter(ch => ch.reviewed).length} من {c.chapters.length} تمت مراجعتها</p></button>
+          <details className="chapter-options"><summary aria-label={`خيارات المقرر ${c.name}`} title="خيارات المقرر"><span aria-hidden="true">⋯</span></summary><div className="chapter-options-content">
+            <NameEditor value={c.name} label="اسم المقرر" maximum={80} disabled={busy} onSave={name => action(() => put(`/study/courses/${c.id}`, { name, version: c.version }))} />
+            <button className="danger" disabled={busy} onClick={() => { if (confirm('حذف المقرر وكل شابتراته وملفاته ونتائجه؟ تبقى الأهداف والمهام مستقلة.')) action(() => remove(`/study/courses/${c.id}?version=${c.version}&confirm=true`)); }}>حذف المقرر</button>
+          </div></details>
+        </article>)}</section>
         {data.courses.length === 0 ? <p>أضف أول مقرر لتبدأ تنظيم شباترك.</p> : !visible.length && <p>لا توجد مقررات مطابقة. جرّب اسمًا آخر أو امسح البحث.</p>}
-        {course && <section className="card details"><header className="course-details-header"><h2>{course.name}</h2><details key={course.id} className="chapter-options"><summary aria-label={`خيارات المقرر ${course.name}`}>خيارات <span aria-hidden="true">⋯</span></summary><div className="chapter-options-content">
-          <NameEditor value={course.name} label="اسم المقرر" maximum={80} disabled={busy} onSave={name => action(() => put(`/study/courses/${course.id}`, { name, version: course.version }))} />
-          <button className="danger" disabled={busy} onClick={() => { if (confirm('حذف المقرر وكل شابتراته وملفاته ونتائجه؟ تبقى الأهداف والمهام مستقلة.')) action(() => remove(`/study/courses/${course.id}?version=${course.version}&confirm=true`)); }}>حذف المقرر</button>
-        </div></details></header>
+        {course && <section className="card details"><header className="course-details-header"><h2>{course.name}</h2></header>
           <div className="search-panel"><label>حالة المراجعة<select value={filter} onChange={e => setFilter(e.target.value as typeof filter)}><option value="all">الكل</option><option value="pending">للمراجعة</option><option value="done">تمت المراجعة</option></select></label></div>
-          {chapterIndexes.map(({ index }) => <ChapterCard key={course.chapters[index].id} chapter={course.chapters[index]} busy={busy} action={action} onChanged={load} />)}
-          <form className="form" onSubmit={async e => { e.preventDefault(); if (await action(() => post(`/study/courses/${course.id}/chapters`, { title: chapterName }))) setChapterName(''); }}><label><input aria-label="عنوان الشابتر الجديد" placeholder="اكتب عنوان الشابتر" required maxLength={100} value={chapterName} onChange={e => setChapterName(e.target.value)} /></label><button disabled={busy || !chapterName.trim()}><span aria-hidden="true">＋</span> إضافة شابتر</button></form>
+          {chapterIndexes.map(({ index }, position) => {
+            const chapter = course.chapters[index];
+            const expanded = expandedChapter === undefined ? position === 0 : expandedChapter === chapter.id;
+            return <ChapterCard key={chapter.id} chapter={chapter} expanded={expanded} onToggle={() => setExpandedChapter(expanded ? null : chapter.id)} busy={busy} action={action} onChanged={load} />;
+          })}
+          {!addingChapter ? <button type="button" disabled={busy} onClick={() => setAddingChapter(true)}><span aria-hidden="true">＋</span> إضافة شابتر</button> : <form className="form" onSubmit={async e => {
+            e.preventDefault();
+            if (await action(async () => {
+              const added = await post<{ id: string }>(`/study/courses/${course.id}/chapters`, { title: chapterName });
+              setExpandedChapter(added.id); setFilter('all');
+            })) { setChapterName(''); setAddingChapter(false); }
+          }}><label><input autoFocus disabled={busy} aria-label="عنوان الشابتر الجديد" placeholder="اكتب عنوان الشابتر" required maxLength={100} value={chapterName} onChange={e => setChapterName(e.target.value)} /></label><div className="filter-buttons"><button disabled={busy || !chapterName.trim()}>حفظ الشابتر</button><button type="button" className="secondary" disabled={busy} onClick={() => { setAddingChapter(false); setChapterName(''); }}>إلغاء</button></div></form>}
         </section>}
       </>}
       {tab === 'goals' && <GoalPanel data={data} busy={busy} action={action} />}

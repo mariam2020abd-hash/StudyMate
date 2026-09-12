@@ -83,13 +83,24 @@ public sealed class FirebaseAuthTests(ApiFixture fixture) : IClassFixture<ApiFix
         Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/auth/firebase", new { })).StatusCode);
     }
 
-    [Fact]
-    public async Task Linking_preserves_existing_student_id_and_rejects_second_uid()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Linking_preserves_existing_student_id_and_rejects_second_uid(bool previouslyVerified)
     {
         var student = await fixture.Student();
+        using (var scope = fixture.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+            var user = await db.Users.SingleAsync(u => u.Id == student.Id);
+            user.Verified = previouslyVerified;
+            await db.SaveChangesAsync();
+        }
         var client = Client(Token(Guid.NewGuid().ToString(), student.Email));
         var profile = await Json(await client.PostAsJsonAsync("/api/auth/firebase", new { }));
         Assert.Equal(student.Id, profile.GetProperty("id").GetGuid());
+        Assert.True(profile.GetProperty("verified").GetBoolean());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await student.Client.GetAsync("/api/me")).StatusCode);
         var other = Client(Token(Guid.NewGuid().ToString(), student.Email));
         Assert.Equal(HttpStatusCode.Conflict, (await other.PostAsJsonAsync("/api/auth/firebase", new { })).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await student.Client.PostAsJsonAsync("/api/auth/login", new { email = student.Email, password = Password })).StatusCode);
